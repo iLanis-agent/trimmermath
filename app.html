@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trimmer Math - the app</title>
+<style>
+  :root { --accent: #7a3a6e; }
+  * { box-sizing: border-box; }
+  body { font-family: Georgia, serif; max-width: 44em; margin: 2em auto; padding: 0 1em; color: #222; background: #fbfaf7; }
+  h1 { color: var(--accent); margin-bottom: 0.1em; }
+  .tag { color: var(--accent); font-style: italic; margin-top: 0; }
+  .card { background: #fff; border: 1px solid #ddd; border-left: 4px solid var(--accent); border-radius: 6px; padding: 1em 1.2em; margin: 1.2em 0; }
+  h3 { margin-top: 0; }
+  label { display: block; font-size: 0.9em; font-weight: 600; margin: 0.7em 0 0.2em; }
+  input { width: 100%; max-width: 12em; padding: 0.4em 0.5em; font-size: 1em; border: 1px solid #bbb; border-radius: 4px; background: #f4f3ef; }
+  .big { font-weight: 600; color: var(--accent); line-height: 1.45; margin-top: 0.9em; }
+  .err { color: #a33; }
+  a { color: var(--accent); }
+  .foot { margin-top: 2.5em; font-size: 0.85em; color: #777; }
+</style>
+</head>
+<body>
+<h1>Trimmer Math</h1>
+<p class="tag">Runtime truth, swath truth and line truth - labeled norms, honest arithmetic.</p>
+
+<div class="card">
+  <h3>The runtime truth</h3>
+  <label for="r-volts">Pack volts</label>
+  <input id="r-volts" type="number" step="any" value="40">
+  <label for="r-ah">Pack amp-hours</label>
+  <input id="r-ah" type="number" step="any" value="4">
+  <label for="r-watts">Motor watts</label>
+  <input id="r-watts" type="number" step="any" value="320">
+  <label for="r-claim">Box runtime claim (minutes)</label>
+  <input id="r-claim" type="number" step="any" value="30">
+  <p class="big" id="r-out"></p>
+</div>
+
+<div class="card">
+  <h3>The swath truth</h3>
+  <label for="s-swath">Claimed cutting swath (inches)</label>
+  <input id="s-swath" type="number" step="any" value="15">
+  <label for="s-walk">Your walking pace (feet per minute)</label>
+  <input id="s-walk" type="number" step="any" value="40">
+  <label for="s-honest">Honest minutes per charge (from the runtime truth)</label>
+  <input id="s-honest" type="number" step="any" value="27">
+  <label for="s-yard">Trimming to do (square feet)</label>
+  <input id="s-yard" type="number" step="any" value="1200">
+  <p class="big" id="s-out"></p>
+</div>
+
+<div class="card">
+  <h3>The line truth</h3>
+  <label for="l-spool">Line on the spool (feet)</label>
+  <input id="l-spool" type="number" step="any" value="20">
+  <label for="l-bumps">Bumps per session</label>
+  <input id="l-bumps" type="number" step="any" value="12">
+  <label for="l-inches">Inches fed per bump</label>
+  <input id="l-inches" type="number" step="any" value="2">
+  <p class="big" id="l-out"></p>
+</div>
+
+<p class="foot">The 0.75 overlap norm is a labeled norm - the arithmetic is honest, and the last fence line at dusk keeps the honest ledger.</p>
+
+<script src="engine.js"></script>
+<script>
+function g(id){ return document.getElementById(id); }
+function v(id){ return parseFloat(g(id).value); }
+function show(id, msg, isErr){ var el = g(id); el.textContent = msg; el.className = isErr ? "err big" : "big"; }
+
+function runRun(){
+  var args = [v("r-volts"), v("r-ah"), v("r-watts"), v("r-claim")];
+  var r = TrimmerMath.runPlan.apply(null, args);
+  if (r.error) return show("r-out", r.error, true);
+  show("r-out", TrimmerMath.renderRun.apply(null, [r].concat(args)), false);
+}
+function runSwath(){
+  var args = [v("s-swath"), v("s-walk"), v("s-honest"), v("s-yard")];
+  var r = TrimmerMath.swathPlan.apply(null, args);
+  if (r.error) return show("s-out", r.error, true);
+  show("s-out", TrimmerMath.renderSwath.apply(null, [r].concat(args)), false);
+}
+function runLine(){
+  var args = [v("l-spool"), v("l-bumps"), v("l-inches")];
+  var r = TrimmerMath.linePlan.apply(null, args);
+  if (r.error) return show("l-out", r.error, true);
+  show("l-out", TrimmerMath.renderLine.apply(null, [r].concat(args)), false);
+}
+
+["r-volts","r-ah","r-watts","r-claim"].forEach(function(id){ g(id).addEventListener("input", runRun); });
+["s-swath","s-walk","s-honest","s-yard"].forEach(function(id){ g(id).addEventListener("input", runSwath); });
+["l-spool","l-bumps","l-inches"].forEach(function(id){ g(id).addEventListener("input", runLine); });
+runRun(); runSwath(); runLine();
+</script>
+</body>
+</html>
